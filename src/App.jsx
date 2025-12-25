@@ -21,10 +21,11 @@ import posterImage from './Last-Minute-Games.png';
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-const appId = 'board-game-ny-rsvp';
 
 export default function App() {
     const [user, setUser] = useState(null);
+    const [authLoading, setAuthLoading] = useState(true);
+    const [authError, setAuthError] = useState(null);
     const [rsvps, setRsvps] = useState([]);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
@@ -47,6 +48,9 @@ export default function App() {
                 await signInAnonymously(auth);
             } catch (error) {
                 console.error("Auth error:", error);
+                setAuthError("Could not sign in anonymously. Enable Anonymous Auth in Firebase Console.");
+            } finally {
+                setAuthLoading(false);
             }
         };
         initAuth();
@@ -61,7 +65,7 @@ export default function App() {
         // Note: In a real app with strict privacy, you'd want to use a cloud function or
         // aggregate query to get the count without fetching all docs to the client.
         // For this simple MVP, we fetch locally but only display the count.
-        const rsvpsRef = collection(db, 'artifacts', appId, 'public', 'data', 'rsvps');
+        const rsvpsRef = collection(db, 'rsvps');
         const unsubscribe = onSnapshot(rsvpsRef, (snapshot) => {
             const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             setRsvps(data);
@@ -105,13 +109,25 @@ export default function App() {
         document.getElementsByTagName('head')[0].appendChild(metaTitle);
     }, []);
 
+    const [errorMessage, setErrorMessage] = useState('');
+
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!user || submitting) return;
+
+        if (authError) {
+            setErrorMessage(authError);
+            return;
+        }
+        if (!user) {
+            setErrorMessage("Still connecting to services... please wait a moment.");
+            return;
+        }
+        if (submitting) return;
         setSubmitting(true);
+        setErrorMessage('');
 
         try {
-            const rsvpsRef = collection(db, 'artifacts', appId, 'public', 'data', 'rsvps');
+            const rsvpsRef = collection(db, 'rsvps');
             await addDoc(rsvpsRef, {
                 ...formData,
                 timestamp: new Date().toISOString(),
@@ -120,6 +136,7 @@ export default function App() {
             setSubmitted(true);
         } catch (error) {
             console.error("Submission error:", error);
+            setErrorMessage(error.message);
         } finally {
             setSubmitting(false);
         }
@@ -129,6 +146,11 @@ export default function App() {
 
     return (
         <div className="min-h-screen bg-neutral-950 text-neutral-100 font-sans selection:bg-amber-500/30">
+            {(errorMessage || authError) && (
+                <div className="fixed top-0 left-0 right-0 z-50 p-4 bg-red-500/90 text-white text-center font-bold backdrop-blur-sm">
+                    {authError ? "Authentication Error: " + authError : "Something went wrong: " + errorMessage}
+                </div>
+            )}
 
             {/* --- POSTER IMAGE HERO --- */}
             <div className="w-full flex justify-center bg-[#2d3a54] pt-8 pb-12 px-4 shadow-2xl border-b border-white/10 relative overflow-hidden">
