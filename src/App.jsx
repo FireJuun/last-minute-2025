@@ -36,7 +36,8 @@ export default function App() {
     const [formData, setFormData] = useState({
         name: '',
         email: '',
-        guests: 1,
+        adults: 1,
+        children: 0,
         favoriteGames: '',
         dietary: ''
     });
@@ -142,7 +143,7 @@ export default function App() {
         }
     };
 
-    const totalAttendees = rsvps.reduce((acc, curr) => acc + Number(curr.guests || 1), 0);
+    const totalAttendees = rsvps.reduce((acc, curr) => acc + (Number(curr.adults || 0) + Number(curr.children || 0) || Number(curr.guests || 1)), 0);
 
     return (
         <div className="min-h-screen bg-neutral-950 text-neutral-100 font-sans selection:bg-amber-500/30">
@@ -221,14 +222,14 @@ export default function App() {
                         <MapPin size={24} />
                     </div>
                     <h3 className="text-xl font-bold">Where</h3>
-                    <p className="text-neutral-400">Manning's House<br />Charlotte, NC</p>
+                    <p className="text-neutral-400">Manning's house<br />Charlotte, NC</p>
                 </div>
                 <div className="p-8 rounded-3xl bg-neutral-900 border border-neutral-800 flex flex-col gap-4">
                     <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-500">
                         <Sandwich size={24} />
                     </div>
                     <h3 className="text-xl font-bold">Food</h3>
-                    <p className="text-neutral-400">Food / snacks provided.<br />BYOB & your favorite board games!</p>
+                    <p className="text-neutral-400">Food & snacks provided<br />BYOB & your favorite board games</p>
                 </div>
             </section>
 
@@ -273,26 +274,45 @@ export default function App() {
                                         />
                                     </div>
                                 </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-bold text-neutral-500 uppercase tracking-wider">Number of
-                                        Guests</label>
-                                    <select
-                                        className="w-full bg-neutral-800 border-none rounded-2xl px-6 py-4 focus:ring-2 ring-amber-500 outline-none transition-all appearance-none"
-                                        value={formData.guests} onChange={(e) => setFormData({
-                                            ...formData, guests: e.target.value
-                                        })}
-                                    >
-                                        {[1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n} {n === 1 ? 'Person' : 'People'}
-                                        </option>)}
-                                    </select>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-bold text-neutral-500 uppercase tracking-wider">Adults</label>
+                                        <select
+                                            className="w-full bg-neutral-800 border-none rounded-2xl px-6 py-4 focus:ring-2 ring-amber-500 outline-none transition-all appearance-none"
+                                            value={formData.adults} onChange={(e) => setFormData({
+                                                ...formData, adults: Number(e.target.value)
+                                            })}
+                                        >
+                                            {[1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n}</option>)}
+                                        </select>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-bold text-neutral-500 uppercase tracking-wider">Children</label>
+                                        <select
+                                            className="w-full bg-neutral-800 border-none rounded-2xl px-6 py-4 focus:ring-2 ring-amber-500 outline-none transition-all appearance-none"
+                                            value={formData.children} onChange={(e) => setFormData({
+                                                ...formData, children: Number(e.target.value)
+                                            })}
+                                        >
+                                            {[0, 1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n}</option>)}
+                                        </select>
+                                    </div>
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-sm font-bold text-neutral-500 uppercase tracking-wider">What games should
                                         we play?</label>
                                     <textarea
                                         className="w-full bg-neutral-800 border-none rounded-2xl px-6 py-4 focus:ring-2 ring-amber-500 outline-none transition-all min-h-[100px]"
-                                        placeholder="Catan, Terraforming Mars, Uno..." value={formData.favoriteGames}
+                                        placeholder="Chicken Caesar, Aeons End, Root, Concordia, ..." value={formData.favoriteGames}
                                         onChange={(e) => setFormData({ ...formData, favoriteGames: e.target.value })}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold text-neutral-500 uppercase tracking-wider">Dietary Restrictions? &emsp;&emsp; (leave blank if none)</label>
+                                    <input
+                                        className="w-full bg-neutral-800 border-none rounded-2xl px-6 py-4 focus:ring-2 ring-amber-500 outline-none transition-all"
+                                        placeholder="Vegan, Gluten Free, __ Allergies, ..." value={formData.dietary}
+                                        onChange={(e) => setFormData({ ...formData, dietary: e.target.value })}
                                     />
                                 </div>
                                 <button
