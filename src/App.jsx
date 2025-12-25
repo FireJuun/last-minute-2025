@@ -39,7 +39,8 @@ export default function App() {
         adults: 1,
         children: 0,
         favoriteGames: '',
-        dietary: ''
+        dietary: '',
+        status: 'yes' // 'yes', 'maybe', 'no'
     });
 
     // (1) Authentication
@@ -143,7 +144,13 @@ export default function App() {
         }
     };
 
-    const totalAttendees = rsvps.reduce((acc, curr) => acc + (Number(curr.adults || 0) + Number(curr.children || 0) || Number(curr.guests || 1)), 0);
+    const totalAttendees = rsvps
+        .filter(r => r.status === 'yes' || !r.status) // Handle legacy 'yes' (undefined status)
+        .reduce((acc, curr) => acc + (Number(curr.adults || 0) + Number(curr.children || 0) || Number(curr.guests || 1)), 0);
+
+    const maybeAttendees = rsvps
+        .filter(r => r.status === 'maybe')
+        .reduce((acc, curr) => acc + (Number(curr.adults || 0) + Number(curr.children || 0) || Number(curr.guests || 1)), 0);
 
     return (
         <div className="min-h-screen bg-neutral-950 text-neutral-100 font-sans selection:bg-amber-500/30">
@@ -253,7 +260,26 @@ export default function App() {
                                 <p className="text-neutral-400">We've saved your spot. See you at the table!</p>
                             </div>
                         ) : (
-                            <form onSubmit={handleSubmit} className="space-y-4">
+                            <form onSubmit={handleSubmit} className="space-y-6">
+                                {/* Status Selection */}
+                                <div className="grid grid-cols-3 gap-2 p-1 bg-neutral-800/50 rounded-2xl">
+                                    {['yes', 'maybe', 'no'].map((s) => (
+                                        <button
+                                            key={s}
+                                            type="button"
+                                            onClick={() => setFormData({ ...formData, status: s })}
+                                            className={`py-3 rounded-xl font-bold capitalize transition-all ${formData.status === s
+                                                ? (s === 'no' ? 'bg-red-500/20 text-red-500 ring-2 ring-red-500' :
+                                                    s === 'maybe' ? 'bg-blue-500/20 text-blue-500 ring-2 ring-blue-500' :
+                                                        'bg-emerald-500/20 text-emerald-500 ring-2 ring-emerald-500')
+                                                : 'text-neutral-500 hover:bg-neutral-800'
+                                                }`}
+                                        >
+                                            {s === 'yes' ? 'Yes!' : s === 'maybe' ? 'Maybe?' : 'No :('}
+                                        </button>
+                                    ))}
+                                </div>
+
                                 <div className="grid md:grid-cols-2 gap-4">
                                     <div className="space-y-2">
                                         <label className="text-sm font-bold text-neutral-500 uppercase tracking-wider">Name</label>
@@ -274,52 +300,56 @@ export default function App() {
                                         />
                                     </div>
                                 </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-bold text-neutral-500 uppercase tracking-wider">Adults</label>
-                                        <select
-                                            className="w-full bg-neutral-800 border-none rounded-2xl px-6 py-4 focus:ring-2 ring-amber-500 outline-none transition-all appearance-none"
-                                            value={formData.adults} onChange={(e) => setFormData({
-                                                ...formData, adults: Number(e.target.value)
-                                            })}
-                                        >
-                                            {[1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n}</option>)}
-                                        </select>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-bold text-neutral-500 uppercase tracking-wider">Children</label>
-                                        <select
-                                            className="w-full bg-neutral-800 border-none rounded-2xl px-6 py-4 focus:ring-2 ring-amber-500 outline-none transition-all appearance-none"
-                                            value={formData.children} onChange={(e) => setFormData({
-                                                ...formData, children: Number(e.target.value)
-                                            })}
-                                        >
-                                            {[0, 1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n}</option>)}
-                                        </select>
-                                    </div>
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-bold text-neutral-500 uppercase tracking-wider">What games should
-                                        we play?</label>
-                                    <textarea
-                                        className="w-full bg-neutral-800 border-none rounded-2xl px-6 py-4 focus:ring-2 ring-amber-500 outline-none transition-all min-h-[100px]"
-                                        placeholder="Chicken Caesar, Aeons End, Root, Concordia, ..." value={formData.favoriteGames}
-                                        onChange={(e) => setFormData({ ...formData, favoriteGames: e.target.value })}
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-bold text-neutral-500 uppercase tracking-wider">Dietary Restrictions? &emsp;&emsp; (leave blank if none)</label>
-                                    <input
-                                        className="w-full bg-neutral-800 border-none rounded-2xl px-6 py-4 focus:ring-2 ring-amber-500 outline-none transition-all"
-                                        placeholder="Vegan, Gluten Free, __ Allergies, ..." value={formData.dietary}
-                                        onChange={(e) => setFormData({ ...formData, dietary: e.target.value })}
-                                    />
-                                </div>
+                                {formData.status !== 'no' && (
+                                    <>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <label className="text-sm font-bold text-neutral-500 uppercase tracking-wider">Adults</label>
+                                                <select
+                                                    className="w-full bg-neutral-800 border-none rounded-2xl px-6 py-4 focus:ring-2 ring-amber-500 outline-none transition-all appearance-none"
+                                                    value={formData.adults} onChange={(e) => setFormData({
+                                                        ...formData, adults: Number(e.target.value)
+                                                    })}
+                                                >
+                                                    {[1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n}</option>)}
+                                                </select>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-sm font-bold text-neutral-500 uppercase tracking-wider">Children</label>
+                                                <select
+                                                    className="w-full bg-neutral-800 border-none rounded-2xl px-6 py-4 focus:ring-2 ring-amber-500 outline-none transition-all appearance-none"
+                                                    value={formData.children} onChange={(e) => setFormData({
+                                                        ...formData, children: Number(e.target.value)
+                                                    })}
+                                                >
+                                                    {[0, 1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n}</option>)}
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-bold text-neutral-500 uppercase tracking-wider">What games should
+                                                we play?</label>
+                                            <textarea
+                                                className="w-full bg-neutral-800 border-none rounded-2xl px-6 py-4 focus:ring-2 ring-amber-500 outline-none transition-all min-h-[100px]"
+                                                placeholder="Chicken Caesar, Aeons End, Root, Concordia, ..." value={formData.favoriteGames}
+                                                onChange={(e) => setFormData({ ...formData, favoriteGames: e.target.value })}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-bold text-neutral-500 uppercase tracking-wider">Dietary Restrictions? &emsp;&emsp; (leave blank if none)</label>
+                                            <input
+                                                className="w-full bg-neutral-800 border-none rounded-2xl px-6 py-4 focus:ring-2 ring-amber-500 outline-none transition-all"
+                                                placeholder="Vegan, Gluten Free, __ Allergies, ..." value={formData.dietary}
+                                                onChange={(e) => setFormData({ ...formData, dietary: e.target.value })}
+                                            />
+                                        </div>
+                                    </>
+                                )}
                                 <button
                                     disabled={submitting}
-                                    className="w-full bg-amber-500 text-black font-black py-5 rounded-2xl hover:bg-amber-400 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                                    className={`w-full font-black py-5 rounded-2xl transition-all disabled:opacity-50 flex items-center justify-center gap-2 ${formData.status === 'no' ? 'bg-neutral-800 text-white hover:bg-neutral-700' : 'bg-amber-500 text-black hover:bg-amber-400'}`}
                                 >
-                                    {submitting ? <Loader2 className="animate-spin" /> : 'CONFIRM RSVP'}
+                                    {submitting ? <Loader2 className="animate-spin" /> : (formData.status === 'no' ? 'SEND REGRETS' : 'CONFIRM RSVP')}
                                 </button>
                             </form>
                         )}
@@ -338,6 +368,13 @@ export default function App() {
                             {loading ? '-' : totalAttendees}
                         </h3>
                         <p className="text-xl text-amber-500 font-bold mb-4">Players Joined</p>
+
+                        {maybeAttendees > 0 && (
+                            <div className="mt-4 pt-4 border-t border-neutral-800 w-full animate-pulse">
+                                <h4 className="text-2xl font-bold text-neutral-400">{maybeAttendees}</h4>
+                                <p className="text-sm text-neutral-600 font-bold uppercase tracking-widest">Maybes</p>
+                            </div>
+                        )}
 
                         <p className="text-neutral-500 max-w-xs mx-auto">
                             Join the crew! We're keeping the guest list private, but know that you'll be in good company.
